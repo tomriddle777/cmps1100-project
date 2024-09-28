@@ -1,0 +1,11 @@
+1. How long (cumulative) have you spent on the code?
+I can't give a good estimate on how long I have spent on the code, but I would say it is probably over 6 hours and under 24 hours.
+
+2. What was the most time consuming part?
+The most time consuming part, besides figuring out how to process a string input to verify its type and value, is structuring the code in such a way that it is possible for future feature additions and unit testing.
+
+3. In retrospect, how could you have worked more efficiently?
+I could've worked more efficiently by compartmentalizing everything into classes or functions so unit testing more functions become possible.
+
+4. What libraries/starter code were most useful? To what extent did you need to modify them? 
+The one single part of the chatgpt code that was most helpful was its code for counting the value when there are aces in the hand. I had another version I attempted to make myself out of curiousity that sort of worked, but chatgpt's solution was simpler and made more sense in the context of how I wanted to structure my code.
