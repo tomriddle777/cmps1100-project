@@ -365,6 +365,7 @@ def insurance(player, dealer):
         if option == 'y':
             if (player.wager / 2) <= (player.bankroll - player.wager):
                 print("You enter a side bet of half your original bet (" + str(player.wager / 2) + " chips) that the dealer will have a blackjack.")
+                pause(1)
                 if dealer.hand.total == 21:
                     player.bankroll += player.wager
                     print("The dealer did indeed have blackjack. Nice save! You win " + str(player.wager) + " chips!")
