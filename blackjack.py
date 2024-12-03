@@ -1,6 +1,5 @@
 import random, time
 
-
 def pause(seconds):
     if seconds == 0.5:
         time.sleep(0.5)
@@ -72,7 +71,7 @@ class Shoe:
 
     def cut(self):
         while True:
-            choice = input("Where do you want to cut? Type any positive number between 0 and 10, exclusive. The lower the number is, the higher the cut is, and vice versa. ")
+            choice = input("Where do you want to cut? Type any positive number between 0 and 10, exclusive. The lower the number is, the lower the place where dealer cut is, and vice versa. ")
             try:
                 choice = float(choice)
                 if (choice > 0) and (choice < 10):
@@ -205,14 +204,15 @@ class Player:
 class Human(Player):
     def __init__(self, name, shoe):
         super().__init__(name, shoe)
-        self.bankroll = 1000
+        self.bankroll = float(1000)
         self.wager = 0
         self.wager2 = 0
         self.hand2 = Hand("2nd")
     
     def split_check(self):
-        if (len(self.hand.cards) == 2) and self.hand.cards[0].value == self.hand.cards[1].value:
-            return True
+        if (len(self.hand.cards) == 2) and (self.hand.cards[0].value == self.hand.cards[1].value):
+            if self.wager <= (self.bankroll -  self.wager):
+                return True
         return False
 
     def split(self):
@@ -255,7 +255,7 @@ class Human(Player):
             super().hit()
 
     def hit2(self):
-        card = self.hand2.deal()
+        card = self.hand2.deal(self.shoe)
         self.counting.count(card)
         print("----------------------------------------------------------------------")
         print(self.name + " was dealt the " + card.display() + " for their second hand.")
@@ -364,28 +364,27 @@ def compare(hand, dealer, dealer_result, wager):
 
 def insurance(player, dealer):
     while True:
+        if not (player.wager / 2) <= (player.bankroll - player.wager):
+            return [0, 0]
         option = input("Do you want insurance? [y] yes, or [n] no. ")
         if option == 'y':
-            if (player.wager / 2) <= (player.bankroll - player.wager):
-                print("You enter a side bet of half your original bet (" + str(player.wager / 2) + " chips) that the dealer will have a blackjack.")
-                pause(1)
-                if dealer.hand.total == 21:
-                    player.bankroll += player.wager
-                    print("The dealer did indeed have blackjack. Nice save! You win " + str(player.wager) + " chips!")
-                    return ["W", (player.wager / 2)]
-                else:
-                    player.bankroll -= (player.wager / 2)
-                    print("The dealer did not have blackjack. You lose " + str(player.wager / 2) + " chips.")
-                    return ["L", (player.wager / 2)]
+            print("You enter a side bet of half your original bet (" + str(player.wager / 2) + " chips) that the dealer will have a blackjack.")
+            pause(1)
+            if dealer.hand.total == 21:
+                player.bankroll += player.wager
+                print("The dealer did indeed have blackjack. Nice save! You win " + str(player.wager) + " chips!")
+                return ["W", (player.wager / 2)]
             else:
-                print("You do not have enough chips to take insurance.")
+                player.bankroll -= (player.wager / 2)
+                print("The dealer did not have blackjack. You lose " + str(player.wager / 2) + " chips.")
+                return ["L", (player.wager / 2)]
         elif option == 'n':
             print("You decline to take insurance.")
             return [0, 0]
         else:
             print("Invalid input. Please enter [y] or [n].")
 
-def game_round(player, dealer):
+def game_round(player, dealer, shoe):
     result1 = [0, 0]
     result2 = [0, 0]
     insure_result = [0, 0]
@@ -401,16 +400,6 @@ def game_round(player, dealer):
     print()
     dealer.display_hand()
     player.display_hand()
-
-    
-    """
-    player.hand.cards = []
-    player.hand.rig(1)
-    player.hand.rig(1)
-    dealer.hand.cards = []
-    dealer.hand.rig(1)
-    dealer.hand.rig(10)
-    """
 
     if (dealer.hand.cards[0].value == 1):
         insure_result = insurance(player, dealer)
@@ -658,12 +647,12 @@ def game_round(player, dealer):
     else:
         temp = 0
         if result1[0] == "Surrender":
-            print("You had surrendered your hand and forfeited half of your original wager, which was " + str(player.wager / 2) + " chips.")
+            print("You had surrendered your hand and forfeited half of your original wager, which calculates to a loss of " + str(player.wager / 2) + " chips.")
             temp -= (result1[1] / 2)
         elif result1[0] == "W BJ":
-            print("You had blackjack! It pays 3:2, which is " + str(int(round(result1[1] * (3 / 2), 0))) + " chips!")
-            temp += int(round(result1[1] * (3 / 2), 0))
-            player.bankroll += int(round(result1[1] * (3 / 2), 0))
+            print("You had blackjack! It pays 3:2, which is " + str(result1[1] * (3 / 2)) + " chips!")
+            temp += result1[1] * (3 / 2)
+            player.bankroll += result1[1] * (3 / 2)
         elif result1[0] == "L BJ":
             print("The dealer had blackjack. You lose " + str(result1[1]) + " chips.") 
             temp -= result1[1]
@@ -701,18 +690,20 @@ def game_round(player, dealer):
 
     print()
 
+    print("BANKROLL: " + str(player.bankroll) + " chips\n")
+    shoe.counting.display()
+
     player.end_round()
     dealer.end_round()
     return
 
 if __name__ == "__main__":
     print("----------------------------------------------------------------------")
-    print("Welcome to Blackjack!\nBlackjack pays 3:2\nDealer stands on soft 17\nInsurance pays 2:1\nNo resplitting\nNo surrender, hitting on aces, or blackjack after split")
+    print("Welcome to Blackjack! (6 deck shoe)\nBlackjack pays 3:2\nDealer stands on soft 17\nInsurance pays 2:1\nNo resplitting\nNo surrender, hitting on aces, or blackjack after split")
     print("----------------------------------------------------------------------\n")
     shoe = Shoe(6)
     player1 = Human("Player", shoe)
     dealer1 = Dealer(shoe)
+    print("BANKROLL: " + str(player1.bankroll) + " chips")
     while player1.bankroll_size() != "Bankrupt.":
-        print("BANKROLL: " + str(player1.bankroll) + " chips")
-        shoe.counting.display()
-        game_round(player1, dealer1)
+        game_round(player1, dealer1, shoe)
