@@ -137,6 +137,36 @@ class CreateTests(unittest.TestCase):
         self.assertIn("In total, you won 10 chips this round.", printed_output)
         self.assertIn("BANKROLL: 1010.0 chips", printed_output)
 
+    def test_sp_double(self): #double after split
+        with patch('builtins.input', side_effect=['10', 'n', 'n', 'sp', 'd', 'h' , 'st']) as mock_input, \
+             patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            with patch('builtins.input', side_effect='5'):
+                shoe = Shoe(1)
+            shoe.shoe[0] = (Card(5, "rigged"))
+            shoe.shoe[1] = (Card(1, "rigged"))
+            shoe.shoe[2] = (Card(5, "rigged")) #player should be able to split
+            shoe.shoe[3] = (Card(7, "rigged")) #dealer has 18 and stands after we play
+            shoe.shoe[4] = (Card(5, "rigged")) #first hand after sp
+            shoe.shoe[5] = (Card(8, "rigged")) #second hand after sp
+            shoe.shoe[6] = (Card(10, "rigged")) #first hand double: a 20!
+            shoe.shoe[7] = (Card(2, "rigged")) #second hand hit
+
+            player1 = Human("A", shoe)
+            dealer1 = Dealer(shoe)
+            # Run the game round
+            game_round(player1, dealer1, shoe)
+            # Get all printed outputs
+            printed_output = mock_stdout.getvalue()
+
+        # Verify input() prompts
+        mock_input.assert_any_call("What would you like to do? [h] hit, [d] double down, [sp] split, or [st] stand. ")
+        mock_input.assert_any_call("Do you want insurance? [y] yes, or [n] no. ")
+        # Assert specific outputs
+        self.assertIn("You won your first hand. You win 20 chips.", printed_output)
+        self.assertIn("You lost your second hand. You lose 10 chips.", printed_output)
+        self.assertIn("In total, you won 10 chips this round.", printed_output)
+        self.assertIn("BANKROLL: 1010.0 chips", printed_output)
+
     def test_broke(self): #what if you're broke
         with patch('builtins.input', side_effect=['10', 'n', 'st']) as mock_input, \
              patch('sys.stdout', new_callable=StringIO) as mock_stdout:
@@ -170,7 +200,7 @@ class CreateTests(unittest.TestCase):
             shoe.shoe[0] = (Card(5, "rigged"))
             shoe.shoe[1] = (Card(1, "rigged"))
             shoe.shoe[2] = (Card(5, "rigged")) #player should be able to split
-            shoe.shoe[3] = (Card(7, "rigged")) #dealer has 18 and stands after we plau
+            shoe.shoe[3] = (Card(7, "rigged")) #dealer has 18 and stands after we play
             shoe.shoe[4] = (Card(5, "rigged")) #first hand after sp
             shoe.shoe[5] = (Card(5, "rigged")) #second hand after sp
             shoe.shoe[6] = (Card(10, "rigged")) #first hand hit
