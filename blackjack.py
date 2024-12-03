@@ -1,5 +1,6 @@
 import random, time
 
+
 def pause(seconds):
     if seconds == 0.5:
         time.sleep(0.5)
@@ -7,11 +8,11 @@ def pause(seconds):
         time.sleep(1)
     elif seconds == 2:
         time.sleep(2)
-    pass
 
 class Counting:
-    def __init__(self):
+    def __init__(self, shoe):
         self.running_count = 0
+        self.shoe = shoe
     
     def count(self, card):
         if card.value == 1:
@@ -28,13 +29,11 @@ class Counting:
     
     def display(self):
         print("----------------------------------------------------------------------")
-        print("Shoe Size (until cutoff card): around " + str(round((((shoe.length() - 1 - ((52 * shoe.decks) - shoe.last)) / shoe.last) * 100), 2)) + "%")
-        print("True Count: " + str(round((counting.running_count / (shoe.length() / 52)), 2)))
-        print("Count: " + str(self.running_count))
-        print("Decks: " + str(round(((shoe.length() - 1) / 52), 2)))
+        print("Shoe Size (until cutoff card): around " + str(round((((self.shoe.length() - 1 - ((52 * self.shoe.decks) - self.shoe.last)) / self.shoe.last) * 100), 2)) + "%")
+        print("True Count: " + str(round((self.running_count / (self.shoe.length() / 52)), 2)))
+        print("Running Count: " + str(self.running_count))
+        print("Decks: " + str(round(((self.shoe.length() - 1) / 52), 2)))
         print("----------------------------------------------------------------------\n")
-
-counting = Counting()
 
 class Card:
     def __init__(self, value, suit):
@@ -49,25 +48,27 @@ class Card:
         return str(num) + " of " + str(self.suit)
 
 class Shoe:
-    def __init__(self, decks):
+    def __init__(self, decks, shuffle=True):
         self.decks = decks
         self.shoe = [] #stack used for game
         self.last = 0 #last card to be dealt
         self.pen = 0 #percentage of deck to be dealt
-        self.create_decks()
+        self.counting = Counting(self)
+        self.create_decks(shuffle)
 
     def length(self):
         return len(self.shoe)
     
-    def create_decks(self):
+    def create_decks(self, shuffle=True):
         suits = ["Clubs", "Diamonds", "Hearts", "Spades"]
         for i in range(1, self.decks + 1):
             for suit in suits:
                 for i in range(1, 14):
                     card = Card(i, suit)
                     self.shoe.append(card)
-        random.shuffle(self.shoe)
-        self.cut()
+        if shuffle:
+            random.shuffle(self.shoe)
+            self.cut()
 
     def cut(self):
         while True:
@@ -107,7 +108,7 @@ class Shoe:
         if card.value == -1:
             print("End of shoe. Shuffling.")
             pause(1)
-            counting.reset()
+            self.counting.reset()
             self.shoe = []
             self.create_decks()
             card = self.shoe[0]
@@ -148,7 +149,7 @@ class Hand:
         else:
             return self.total
 
-    def deal(self): #different from the deal() in Shoe class
+    def deal(self, shoe): #different from the deal() in Shoe class
         card = shoe.deal()
         self.cards.append(card)
         self.sum()
@@ -167,10 +168,12 @@ class Hand:
         print(self.name + " was dealt the " + card.display())
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, shoe):
         self.name = name
         self.hand = Hand(name)
         self.state = "pre"
+        self.shoe = shoe
+        self.counting = shoe.counting
     
     def display_hand(self):
         print("----------------------------------------------------------------------")
@@ -179,20 +182,20 @@ class Player:
             print(card.display())
         print("Total value: " + str(self.hand.display_sum(False)))
         print("----------------------------------------------------------------------\n")
-        counting.display()
+        self.counting.display()
         pause(2)
 
     def hit(self):
-        card = self.hand.deal()
-        counting.count(card)
+        card = self.hand.deal(self.shoe)
+        self.counting.count(card)
         print("----------------------------------------------------------------------")
         print(self.name + " was dealt the " + card.display())
         print("----------------------------------------------------------------------\n")
         self.display_hand()
 
     def initial_deal(self):
-        card = self.hand.deal()
-        counting.count(card)
+        card = self.hand.deal(self.shoe)
+        self.counting.count(card)
         print(self.name + " was dealt the " + card.display())
 
     def end_round(self):
@@ -200,13 +203,13 @@ class Player:
         self.state = "pre"
 
 class Human(Player):
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, shoe):
+        super().__init__(name, shoe)
         self.bankroll = 1000
         self.wager = 0
         self.wager2 = 0
         self.hand2 = Hand("2nd")
-
+    
     def split_check(self):
         if (len(self.hand.cards) == 2) and self.hand.cards[0].value == self.hand.cards[1].value:
             return True
@@ -227,7 +230,7 @@ class Human(Player):
             print(card.display())
         print("Total value: " + str(self.hand.display_sum(len(self.hand2.cards) > 0)))
         print("----------------------------------------------------------------------\n")
-        counting.display()
+        self.counting.display()
         pause(2)
 
     def display_hand2(self):
@@ -237,13 +240,13 @@ class Human(Player):
             print(card.display())
         print("Total value: " + str(self.hand2.display_sum(len(self.hand2.cards) > 0)))
         print("----------------------------------------------------------------------\n")
-        counting.display()
+        self.counting.display()
         pause(2)
 
     def hit(self):
         if len(self.hand2.cards) > 0:
-            card = self.hand.deal()
-            counting.count(card)
+            card = self.hand.deal(self.shoe)
+            self.counting.count(card)
             print("----------------------------------------------------------------------")
             print(self.name + " was dealt the " + card.display() + " for their first hand.")
             print("----------------------------------------------------------------------\n")
@@ -253,7 +256,7 @@ class Human(Player):
 
     def hit2(self):
         card = self.hand2.deal()
-        counting.count(card)
+        self.counting.count(card)
         print("----------------------------------------------------------------------")
         print(self.name + " was dealt the " + card.display() + " for their second hand.")
         print("----------------------------------------------------------------------\n")
@@ -280,11 +283,11 @@ class Human(Player):
         self.wager = 0
 
 class Dealer(Player):
-    def __init__(self):
-        super().__init__("Dealer")
+    def __init__(self, shoe):
+        super().__init__("Dealer", shoe)
         self.facedown = 0
         self.facedown_card = 0
-    
+
     def display_hand(self):
         if self.state != "pre":
             super().display_hand()
@@ -300,7 +303,7 @@ class Dealer(Player):
             super().initial_deal()
             self.facedown += 1
         else:
-            self.facedown_card = self.hand.deal()
+            self.facedown_card = self.hand.deal(self.shoe)
             print(self.name + " was dealt a facedown card")
             self.facedown += 1
 
@@ -309,7 +312,7 @@ class Dealer(Player):
         print("----------------------------------------------------------------------")
         print("Dealer flips over his facedown card. It is the " + self.facedown_card.display() + ".")
         print("----------------------------------------------------------------------\n")
-        counting.count(self.facedown_card)
+        self.counting.count(self.facedown_card)
         self.display_hand()
 
     def end_round(self):
@@ -382,7 +385,7 @@ def insurance(player, dealer):
         else:
             print("Invalid input. Please enter [y] or [n].")
 
-def game_round():
+def game_round(player, dealer):
     result1 = [0, 0]
     result2 = [0, 0]
     insure_result = [0, 0]
@@ -707,9 +710,9 @@ if __name__ == "__main__":
     print("Welcome to Blackjack!\nBlackjack pays 3:2\nDealer stands on soft 17\nInsurance pays 2:1\nNo resplitting\nNo surrender, hitting on aces, or blackjack after split")
     print("----------------------------------------------------------------------\n")
     shoe = Shoe(6)
-    player = Human("Player")
-    dealer = Dealer()
-    while player.bankroll_size() != "Bankrupt.":
-        print("BANKROLL: " + str(player.bankroll) + " chips")
-        counting.display()
-        game_round()
+    player1 = Human("Player", shoe)
+    dealer1 = Dealer(shoe)
+    while player1.bankroll_size() != "Bankrupt.":
+        print("BANKROLL: " + str(player1.bankroll) + " chips")
+        shoe.counting.display()
+        game_round(player1, dealer1)
