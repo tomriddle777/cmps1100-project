@@ -210,9 +210,10 @@ class Human(Player):
         self.hand2 = Hand("2nd")
     
     def split_check(self):
-        if (len(self.hand.cards) == 2) and (self.hand.cards[0].value == self.hand.cards[1].value):
-            if self.wager <= (self.bankroll -  self.wager):
-                return True
+        if (len(self.hand.cards) == 2):
+            if (self.hand.cards[0].value == self.hand.cards[1].value) or (self.hand.cards[0].value >= 10 and self.hand.cards[1].value >= 10): #also split if its 10 and 13, for example.
+                if self.wager <= (self.bankroll -  self.wager):
+                    return True
         return False
 
     def split(self):

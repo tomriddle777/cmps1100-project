@@ -136,6 +136,24 @@ class CreateTests(unittest.TestCase):
         self.assertIn("You won your second hand. You win 10 chips.", printed_output)
         self.assertIn("In total, you won 10 chips this round.", printed_output)
         self.assertIn("BANKROLL: 1010.0 chips", printed_output)
+    
+    def sp_10s(self): #what if you lose insurance and then surrender?
+        with patch('builtins.input', side_effect=['10', 'y', 'y']) as mock_input, \
+             patch('sys.stdout', new_callable=StringIO):
+            with patch('builtins.input', side_effect='5'):
+                shoe = Shoe(1)
+            shoe.shoe[0] = (Card(10, "rigged"))
+            shoe.shoe[1] = (Card(1, "rigged"))
+            shoe.shoe[2] = (Card(13, "rigged")) #should be able to split
+            shoe.shoe[3] = (Card(7, "rigged")) #dealer has 18 and stands after we play
+
+            player1 = Human("A", shoe)
+            dealer1 = Dealer(shoe)
+            # Run the game round
+            game_round(player1, dealer1, shoe)
+
+        # Verify input() prompts
+        mock_input.assert_any_call("What would you like to do? [h] hit, [sp] split, or [st] stand. ")
 
     def test_sp_double(self): #double after split
         with patch('builtins.input', side_effect=['10', 'n', 'n', 'sp', 'd', 'h' , 'st']) as mock_input, \
@@ -281,7 +299,7 @@ class CreateTests(unittest.TestCase):
             shoe = Shoe(1)
         shoe.shoe[0] = (Card(10, "rigged"))
         shoe.shoe[1] = (Card(1, "rigged"))
-        shoe.shoe[2] = (Card(6, "rigged")) #player has 16, basic strategy says surrender against dealer ace
+        shoe.shoe[2] = (Card(13, "rigged")) #split 10 and 13?
         shoe.shoe[3] = (Card(7, "rigged"))
         player1 = Human("A", shoe)
         player1.bankroll = float(30)
